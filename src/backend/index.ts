@@ -18,6 +18,7 @@ export async function activate(ctx: PluginContext) {
   const alerts = createAlerts(ctx);
   const engine = createEngine(ctx, createRemote(ctx), store, {
     onFinished: (finished) => alerts.finished(finished),
+    onStarting: (starting) => alerts.starting(starting),
   });
   const scheduler = createScheduler(ctx, store, engine, () =>
     alerts.checkStale(store),

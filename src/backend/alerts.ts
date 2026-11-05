@@ -1,5 +1,5 @@
 import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
-import type { FinishedRun } from "./engine.js";
+import type { FinishedRun, StartingBackup } from "./engine.js";
 import type { JobRow, Store } from "./store.js";
 
 async function hostName(ctx: PluginContext, userId: string, hostId: number) {
@@ -11,12 +11,70 @@ async function hostName(ctx: PluginContext, userId: string, hostId: number) {
   }
 }
 
+/** What the Storage Health plugin's storage-health.access service gives back. */
+export interface StorageAccessV1 {
+  check: (hostId: number) => Promise<{
+    status: "ok" | "warn" | "fail" | "unknown";
+    problems: number;
+    worstDrive: string;
+    readAt: number | null;
+  }>;
+}
+
 /** Alerts and Termix events when a run ends. */
 export function createAlerts(ctx: PluginContext) {
   const send = (message: Parameters<PluginContext["notify"]["send"]>[0]) =>
     ctx.notify.send(message).catch(() => undefined);
 
+  /** The latest storage health of a host, or null when Storage Health is not there. */
+  async function storageOf(hostId: number) {
+    try {
+      if (ctx.services.providers("storage-health.access").length === 0) {
+        return null;
+      }
+      return await ctx.services
+        .get<StorageAccessV1>("storage-health.access")
+        .check(hostId);
+    } catch {
+      return null;
+    }
+  }
+
   return {
+    /**
+     * A backup to a folder on a host with failing or worn storage is worth a
+     * warning. It still runs: a failing drive is the reason to back up.
+     */
+    async starting({ job, repo }: StartingBackup): Promise<void> {
+      if (repo.kind !== "local" || !job.alerts.onFailure) return;
+      const hostId = repo.location.hostId;
+      const storage = await storageOf(hostId);
+      if (
+        !storage ||
+        (storage.status !== "fail" && storage.status !== "warn")
+      ) {
+        return;
+      }
+      const host = await hostName(ctx, job.updatedBy, hostId);
+      await send({
+        title: `Backup ${job.name} is stored on unhealthy storage on ${host}`,
+        body: storage.worstDrive
+          ? `Storage Health reports problems, worst on ${storage.worstDrive}. Keep a copy somewhere else too.`
+          : "Storage Health reports problems. Keep a copy somewhere else too.",
+        severity: storage.status === "fail" ? "critical" : "warning",
+        category: "backups.target_unhealthy",
+        audience: { userId: job.updatedBy },
+        link: { tab: "backups" },
+        dedupeKey: `backups:${job.id}:storage:${storage.status}`,
+        context: {
+          hostId,
+          hostName: host,
+          sourceId: job.id,
+          sourceName: job.name,
+        },
+      });
+    },
+
     async finished({ run, job, previousStatus }: FinishedRun): Promise<void> {
       if (typeof ctx.operations?.emit === "function") {
         const payload = {

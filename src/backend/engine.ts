@@ -75,8 +75,15 @@ export interface FinishedRun {
   previousStatus: RunStatus | null;
 }
 
+export interface StartingBackup {
+  job: JobRow;
+  repo: RepoRow;
+}
+
 export interface EngineHooks {
   onFinished?: (finished: FinishedRun) => Promise<void> | void;
+  /** Runs before a backup starts. It can warn, it never stops the backup. */
+  onStarting?: (starting: StartingBackup) => Promise<void> | void;
 }
 
 export function nextRun(
@@ -359,6 +366,13 @@ export function createEngine(
       }
       const repo = await repoOf(job);
       const repoValues = await envFor(repo, job.hostId);
+      try {
+        await hooks.onStarting?.({ job, repo });
+      } catch (error) {
+        ctx.log.warn(
+          `Backups start hook failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
       const run = await store.createRun({
         jobId: job.id,
         jobName: job.name,

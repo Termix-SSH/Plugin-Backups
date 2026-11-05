@@ -46,6 +46,11 @@
       "service": "databases.logins",
       "versionRange": "^1.0.0",
       "optional": true
+    },
+    {
+      "service": "storage-health.access",
+      "versionRange": "^1.0.0",
+      "optional": true
     }
   ],
   "contributes": {
