@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "tables": {
+    "repositories": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "uid": {
+          "type": "varchar",
+          "length": 36,
+          "notNull": true,
+          "unique": true
+        },
+        "ownerId": {
+          "type": "refUser",
+          "length": 255,
+          "notNull": true
+        },
+        "name": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true
+        },
+        "kind": {
+          "type": "varchar",
+          "length": 10,
+          "notNull": true
+        },
+        "location": {
+          "type": "text",
+          "notNull": true
+        },
+        "secretSealed": {
+          "type": "text"
+        },
+        "passwordSealed": {
+          "type": "text",
+          "notNull": true
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_p_backups_repositories_owner_id",
+          "columns": [
+            "ownerId"
+          ]
+        }
+      ]
+    },
+    "jobs": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "uid": {
+          "type": "varchar",
+          "length": 36,
+          "notNull": true,
+          "unique": true
+        },
+        "hostId": {
+          "type": "refHost",
+          "notNull": true
+        },
+        "repositoryId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "name": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": true
+        },
+        "sources": {
+          "type": "text",
+          "notNull": true
+        },
+        "secretsSealed": {
+          "type": "text"
+        },
+        "hooks": {
+          "type": "text",
+          "notNull": true
+        },
+        "cron": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true,
+          "defaultValue": ""
+        },
+        "timezone": {
+          "type": "varchar",
+          "length": 64,
+          "notNull": true,
+          "defaultValue": ""
+        },
+        "keep": {
+          "type": "text",
+          "notNull": true
+        },
+        "alerts": {
+          "type": "text",
+          "notNull": true
+        },
+        "oneFileSystem": {
+          "type": "boolean",
+          "notNull": true,
+          "defaultValue": false
+        },
+        "lastStatus": {
+          "type": "varchar",
+          "length": 12
+        },
+        "lastRunAt": {
+          "type": "timestamp"
+        },
+        "lastSuccessAt": {
+          "type": "timestamp"
+        },
+        "nextRunAt": {
+          "type": "timestamp"
+        },
+        "lastSnapshotId": {
+          "type": "varchar",
+          "length": 64
+        },
+        "lastBytes": {
+          "type": "bigint"
+        },
+        "staleAlertAt": {
+          "type": "timestamp"
+        },
+        "updatedBy": {
+          "type": "varchar",
+          "length": 64,
+          "notNull": true
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_p_backups_jobs_host_id",
+          "columns": [
+            "hostId"
+          ]
+        },
+        {
+          "name": "idx_p_backups_jobs_repository_id",
+          "columns": [
+            "repositoryId"
+          ]
+        }
+      ]
+    },
+    "runs": {
+      "columns": {
+        "id": {
+          "type": "id",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "uid": {
+          "type": "varchar",
+          "length": 36,
+          "notNull": true,
+          "unique": true
+        },
+        "jobId": {
+          "type": "integer"
+        },
+        "jobName": {
+          "type": "varchar",
+          "length": 120,
+          "notNull": true,
+          "defaultValue": ""
+        },
+        "hostId": {
+          "type": "refHost",
+          "notNull": true
+        },
+        "repositoryId": {
+          "type": "integer",
+          "notNull": true
+        },
+        "kind": {
+          "type": "varchar",
+          "length": 10,
+          "notNull": true
+        },
+        "startedVia": {
+          "type": "varchar",
+          "length": 12,
+          "notNull": true
+        },
+        "status": {
+          "type": "varchar",
+          "length": 12,
+          "notNull": true
+        },
+        "startedBy": {
+          "type": "varchar",
+          "length": 64,
+          "notNull": true
+        },
+        "startedAt": {
+          "type": "timestamp",
+          "notNull": true,
+          "defaultNow": true
+        },
+        "finishedAt": {
+          "type": "timestamp"
+        },
+        "polledAt": {
+          "type": "timestamp"
+        },
+        "snapshotId": {
+          "type": "varchar",
+          "length": 64
+        },
+        "progress": {
+          "type": "text"
+        },
+        "summary": {
+          "type": "text"
+        },
+        "target": {
+          "type": "text"
+        },
+        "error": {
+          "type": "text"
+        },
+        "log": {
+          "type": "text"
+        }
+      },
+      "indexes": [
+        {
+          "name": "idx_p_backups_runs_job_id",
+          "columns": [
+            "jobId"
+          ]
+        },
+        {
+          "name": "idx_p_backups_runs_host_id",
+          "columns": [
+            "hostId"
+          ]
+        },
+        {
+          "name": "idx_p_backups_runs_status",
+          "columns": [
+            "status"
+          ]
+        }
+      ]
+    }
+  }
+}
