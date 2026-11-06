@@ -5,8 +5,15 @@ import type {
 } from "@termix-ssh/plugin-sdk/frontend";
 import { initApi, listJobs } from "./api";
 import { BackupsTab } from "./BackupsTab";
+import { backupsPanelEnabled } from "./enabled";
 import { HostBackupsTab } from "./HostBackupsTab";
 import { JobsCard } from "./JobsCard";
+import {
+  BackupsCompanion,
+  useBackupsCompanionDefaults,
+} from "./BackupsCompanion";
+
+import { jobsWidget } from "./JobsWidget";
 
 const TAB_ID = "backups";
 const HOST_TAB_ID = "backups-host";
@@ -83,4 +90,50 @@ export function activate(app: TermixApp): void {
     },
     component: JobsCard,
   });
+
+  app.registerExtension("homepage.widgets", jobsWidget);
+  app.registerPaletteEntry({
+    id: "backups.open",
+    titleKey: "tab.title",
+    icon: DatabaseBackup,
+    keywords: ["backup", "restic", "snapshot", "restore"],
+    scope: "global",
+    run: (shell) => shell.openSingletonTab(TAB_ID),
+  });
+  app.registerPaletteEntry({
+    id: "backups.host",
+    titleKey: "hostTab.title",
+    icon: DatabaseBackup,
+    keywords: ["backup", "restic", "snapshot", "run job"],
+    scope: "host",
+    when: (host) => canUse && !!host?.enableSsh,
+    run: (shell, host) => {
+      if (host) shell.openTab(host, HOST_TAB_ID);
+    },
+  });
+
+  if (typeof app.registerCompanion === "function") {
+    app.registerCompanion(HOST_TAB_ID, BackupsCompanion, {
+      icon: DatabaseBackup,
+      titleKey: "hostTab.title",
+      order: 49,
+      tabTypes: ["terminal"],
+      when: (_tab, host) =>
+        canUse && !!host?.enableSsh && backupsPanelEnabled(host),
+      useDefaults: useBackupsCompanionDefaults,
+    });
+    app.registerAction("backups.togglePanel", ((
+      _handle: unknown,
+      tab: unknown,
+    ) => app.toggleCompanion(tab as never, HOST_TAB_ID)) as never);
+    app.registerSlotContribution("tab.menu", {
+      actionId: "backups.togglePanel",
+      titleKey: "nav.togglePanel",
+      icon: DatabaseBackup,
+      kind: "button",
+      order: 49,
+      when: (context) =>
+        (context.tab as { type?: string } | null)?.type === "terminal",
+    });
+  }
 }

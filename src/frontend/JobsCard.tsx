@@ -31,7 +31,10 @@ const POLL_MS = 60_000;
 const RANK = { failed: 0, warning: 1, running: 2, canceled: 3, success: 4 };
 
 /** Dashboard card: every backup job, worst first, or one picked job. */
-export function JobsCard({ isVisible, config }: DashboardCardProps) {
+export function JobsCard({
+  isVisible,
+  config,
+}: Pick<DashboardCardProps, "isVisible" | "config">) {
   const { t } = useTranslation();
   const toast = useToast();
   const allowed = usePermission("use");
