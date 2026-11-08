@@ -65,6 +65,8 @@ Database dumps are restored as files. Load them yourself with `mysql`, `pg_resto
 
 With [Alerts](/plugins/alerts) on, a job's owner hears about a failed backup, a backup with warnings, and when a failed job works again. Set Days without a backup to also get an alert when a job has had no good backup for that long.
 
+With [Storage Health](/plugins/storage-health) on the host, a backup to a folder on that host also warns you when its drives, pools or arrays have problems. The backup still runs, because a failing drive is a reason to back up, but keep a copy somewhere else too.
+
 ## Who can do what
 
 The Use Backups permission opens the plugin. On top of that:

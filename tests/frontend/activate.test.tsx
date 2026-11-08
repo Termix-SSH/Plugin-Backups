@@ -104,6 +104,36 @@ describe(`${manifest.id} activate`, () => {
     ]);
   });
 
+  it("adds a homepage widget, palette entries and a panel switch", async () => {
+    rendered = await renderWithApp(plugin, {
+      manifest,
+      locales,
+      permissions: ["backups.use"],
+      hosts: [host],
+      api: api(),
+    });
+    expect(rendered.registered.extensions("homepage.widgets")).toEqual([
+      "backups_jobs_widget",
+    ]);
+    expect(manifest.contributes.uses).toContain("homepage.widgets");
+    const fields = (
+      manifest.contributes.settings as {
+        host: { fields: Array<{ key: string }> };
+      }
+    ).host.fields.map((f) => f.key);
+    expect(fields).toContain("showPanel");
+    rendered.renderExtension(
+      "homepage.widgets",
+      "backups_jobs_widget",
+      "view",
+      {
+        widget: { title: null },
+        config: {},
+      },
+    );
+    expect(await screen.findByText("Nightly")).toBeTruthy();
+  });
+
   it("shows the jobs of a host", async () => {
     rendered = await renderWithApp(plugin, { manifest, locales, api: api() });
     rendered.renderTab("backups-host", { isVisible: true, host });

@@ -15,6 +15,7 @@ import {
   ListRow,
   PanelList,
   StatusBadge,
+  LoadingState,
 } from "@termix-ssh/plugin-sdk/ui";
 import type { JobView } from "../shared/types";
 import { errorMessage, listJobs, runJob } from "./api";
@@ -31,7 +32,10 @@ const POLL_MS = 60_000;
 const RANK = { failed: 0, warning: 1, running: 2, canceled: 3, success: 4 };
 
 /** Dashboard card: every backup job, worst first, or one picked job. */
-export function JobsCard({ isVisible, config }: DashboardCardProps) {
+export function JobsCard({
+  isVisible,
+  config,
+}: Pick<DashboardCardProps, "isVisible" | "config">) {
   const { t } = useTranslation();
   const toast = useToast();
   const allowed = usePermission("use");
@@ -59,9 +63,7 @@ export function JobsCard({ isVisible, config }: DashboardCardProps) {
 
   if (failed) return <p className="p-3 text-xs text-destructive">{failed}</p>;
   if (!jobs) {
-    return (
-      <p className="p-3 text-xs text-muted-foreground">{t("common.loading")}</p>
-    );
+    return <LoadingState compact label={t("common.loading")} />;
   }
 
   const hostOf = (job: JobView) =>

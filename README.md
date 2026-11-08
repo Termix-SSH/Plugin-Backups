@@ -29,6 +29,7 @@ Read the [docs](https://docs.termix.site/plugins/backups) to set it up and use i
 - Browse snapshots, download a file or a folder, and restore to the same host or another one
 - Get an alert when a backup fails or none has worked for a few days
 - A dashboard card with the state of every backup job
+- Termix actions to list jobs and snapshots, and to start or stop a backup
 
 <br />
 
