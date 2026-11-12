@@ -1,0 +1,309 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Termix-SSH/Termix/main/scripts/authz/authz.schema.json",
+  "seed": [
+    {
+      "as": "owner",
+      "method": "POST",
+      "path": "/plugin-api/backups/repositories",
+      "body": {
+        "name": "authz-own-repo",
+        "kind": "local",
+        "location": {
+          "hostId": "{{host}}",
+          "path": "/tmp/authz-repo"
+        },
+        "password": "authz-repo-pass"
+      },
+      "capture": {
+        "backups.repositories": "id"
+      }
+    }
+  ],
+  "routes": {
+    "GET /plugin-api/backups/hosts/:hostId/database-logins": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      }
+    },
+    "GET /plugin-api/backups/hosts/:hostId/docker": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "edit"
+      }
+    },
+    "POST /plugin-api/backups/hosts/:hostId/install": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      },
+      "destructive": true
+    },
+    "POST /plugin-api/backups/hosts/:hostId/install-rclone": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      },
+      "destructive": true
+    },
+    "GET /plugin-api/backups/hosts/:hostId/jobs": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      }
+    },
+    "POST /plugin-api/backups/hosts/:hostId/jobs": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      }
+    },
+    "GET /plugin-api/backups/hosts/:hostId/status": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect"
+      }
+    },
+    "GET /plugin-api/backups/jobs": {
+      "access": "user",
+      "permission": "backups.use"
+    },
+    "DELETE /plugin-api/backups/jobs/:jobId": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No jobs in the test data (checked through repositories and host access); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/backups/jobs/:jobId": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No jobs in the test data (checked through repositories and host access); only session, permission and unknown id refusals are checked"
+    },
+    "PUT /plugin-api/backups/jobs/:jobId": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No jobs in the test data (checked through repositories and host access); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/backups/jobs/:jobId/run": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No jobs in the test data (checked through repositories and host access); only session, permission and unknown id refusals are checked"
+    },
+    "GET /plugin-api/backups/jobs/:jobId/snapshots": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No jobs in the test data (checked through repositories and host access); only session, permission and unknown id refusals are checked"
+    },
+    "DELETE /plugin-api/backups/jobs/:jobId/snapshots/:snapshotId": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=999999",
+        "snapshotId": "=999999"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "Needs a finished backup"
+    },
+    "GET /plugin-api/backups/jobs/:jobId/snapshots/:snapshotId/download": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=999999",
+        "snapshotId": "=999999"
+      },
+      "allowed": "any",
+      "note": "Needs a finished backup"
+    },
+    "GET /plugin-api/backups/jobs/:jobId/snapshots/:snapshotId/files": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=999999",
+        "snapshotId": "=999999"
+      },
+      "allowed": "any",
+      "note": "Needs a finished backup"
+    },
+    "POST /plugin-api/backups/jobs/:jobId/snapshots/:snapshotId/restore": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.jobs"
+      },
+      "params": {
+        "jobId": "=999999",
+        "snapshotId": "=999999"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "Needs a finished backup"
+    },
+    "GET /plugin-api/backups/repositories": {
+      "access": "user",
+      "permission": "backups.use"
+    },
+    "POST /plugin-api/backups/repositories": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "host",
+        "min": "connect",
+        "key": "hostId"
+      },
+      "body": {
+        "name": "authz-x",
+        "kind": "local",
+        "location": {
+          "hostId": "{{host}}",
+          "path": "/tmp/x"
+        },
+        "password": "authz-pass"
+      }
+    },
+    "DELETE /plugin-api/backups/repositories/:id": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.repositories"
+      },
+      "params": {
+        "id": "backups.repositories"
+      },
+      "destructive": true
+    },
+    "PUT /plugin-api/backups/repositories/:id": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.repositories"
+      },
+      "params": {
+        "id": "backups.repositories"
+      }
+    },
+    "POST /plugin-api/backups/repositories/:id/password": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.repositories"
+      },
+      "params": {
+        "id": "backups.repositories"
+      }
+    },
+    "POST /plugin-api/backups/repositories/:id/test": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.repositories"
+      },
+      "params": {
+        "id": "backups.repositories"
+      }
+    },
+    "GET /plugin-api/backups/runs": {
+      "access": "user",
+      "permission": "backups.use"
+    },
+    "GET /plugin-api/backups/runs/:runId": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.runs"
+      },
+      "params": {
+        "runId": "=authz-none"
+      },
+      "allowed": "any",
+      "note": "No runs in the test data (needs a finished backup run); only session, permission and unknown id refusals are checked"
+    },
+    "POST /plugin-api/backups/runs/:runId/cancel": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.runs"
+      },
+      "params": {
+        "runId": "=authz-none"
+      },
+      "destructive": true,
+      "allowed": "any",
+      "note": "No runs in the test data (needs a finished backup run); only session, permission and unknown id refusals are checked"
+    }
+  }
+}
