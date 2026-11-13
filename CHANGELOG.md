@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+
+- Very long repository paths and addresses no longer keep the server busy for a long time
+
 ## 1.0.0
 
 ### Added
