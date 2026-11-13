@@ -74,8 +74,14 @@ export function createScheduler(
     tick,
     poll,
     start() {
-      ctx.schedule.every(SCHEDULE_TICK_MS, () => tick(), { jitterMs: 5_000 });
-      ctx.schedule.every(POLL_TICK_MS, () => poll(), { runNow: true });
+      ctx.schedule.every(SCHEDULE_TICK_MS, () => tick(), {
+        id: "schedule",
+        jitterMs: 5_000,
+      });
+      ctx.schedule.every(POLL_TICK_MS, () => poll(), {
+        id: "poll",
+        runNow: true,
+      });
     },
   };
 }
