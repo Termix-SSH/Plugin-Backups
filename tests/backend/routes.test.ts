@@ -176,6 +176,24 @@ describe("repositories", () => {
     const bad = await s.request("POST", "/repositories/1/test", { hostId: 1 });
     expect(bad.body).toMatchObject({ ok: false, error: "wrong password" });
   });
+
+  it("removes stale locks from a host", async () => {
+    const s = (server = await startServer());
+    await s.request("POST", "/repositories", S3_REPO);
+    const res = await s.request("POST", "/repositories/1/unlock", {
+      hostId: 1,
+    });
+    expect(res.body).toEqual({ ok: true });
+    const call = s.ssh.calls.at(-1)!;
+    expect(call.hostId).toBe(1);
+    expect(call.stdin).toContain("restic unlock");
+    expect(call.stdin).not.toContain("--remove-all");
+    expect(call.stdin).not.toContain("repo-pass-1");
+    s.setActor("user-2");
+    expect(
+      (await s.request("POST", "/repositories/1/unlock", { hostId: 1 })).status,
+    ).toBe(404);
+  });
 });
 
 describe("jobs", () => {
@@ -188,6 +206,16 @@ describe("jobs", () => {
       canEditRepo: true,
     });
     expect(Date.parse(job.nextRunAt)).toBeGreaterThan(Date.now());
+  });
+
+  it("saves extra restic options and refuses the repository ones", async () => {
+    const { s, job } = await withJob({ backupOptions: "--exclude-caches" });
+    expect(job.backupOptions).toBe("--exclude-caches");
+    const bad = await s.request("PUT", `/jobs/${job.id}`, {
+      ...job,
+      backupOptions: "--password-command id",
+    });
+    expect(bad.status).toBe(400);
   });
 
   it("has no next run when paused or by hand", async () => {

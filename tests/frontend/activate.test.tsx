@@ -51,6 +51,7 @@ const job = {
   keep: { last: 0, daily: 7, weekly: 0, monthly: 0, yearly: 0 },
   alerts: { onFailure: true, staleDays: 0 },
   oneFileSystem: false,
+  backupOptions: "",
   lastStatus: "failed",
   lastRunAt: "2026-11-01T02:00:00Z",
   lastSuccessAt: null,

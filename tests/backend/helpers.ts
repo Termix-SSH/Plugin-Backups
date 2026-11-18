@@ -61,6 +61,7 @@ export async function startServer(
   db.sqlite.exec("INSERT INTO ssh_data DEFAULT VALUES");
   db.sqlite.exec("INSERT INTO ssh_data DEFAULT VALUES");
   const mock = createMockCtx({
+    sandbox: true,
     pluginId: manifest.id,
     manifest,
     capabilities: manifest.capabilities,
@@ -187,6 +188,7 @@ export const JOB = {
   keep: { last: 0, daily: 7, weekly: 4, monthly: 0, yearly: 0 },
   alerts: { onFailure: true, staleDays: 3 },
   oneFileSystem: false,
+  backupOptions: "",
 };
 
 /** Decodes every `printf %s '<base64>'` in a script. */

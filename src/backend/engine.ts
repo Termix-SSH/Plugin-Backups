@@ -38,9 +38,11 @@ import {
   restoreRunScript,
   snapshotsScript,
   testRepoScript,
+  unlockRepoScript,
   type DumpPlan,
 } from "./scripts.js";
 import type { JobRow, RepoRow, RunRow, Store } from "./store.js";
+import { backupOptionArgs } from "./validate.js";
 
 /** What the Databases plugin's databases.logins service gives back. */
 export interface DatabaseLoginsV1 {
@@ -142,10 +144,11 @@ export function createEngine(
     }
   }
 
-  function databaseLogins(): DatabaseLoginsV1 | null {
+  async function databaseLogins(): Promise<DatabaseLoginsV1 | null> {
     try {
-      if (ctx.services.providers("databases.logins").length === 0) return null;
-      return ctx.services.get<DatabaseLoginsV1>("databases.logins");
+      const providers = await ctx.services.providers("databases.logins");
+      if (providers.length === 0) return null;
+      return await ctx.services.get<DatabaseLoginsV1>("databases.logins");
     } catch {
       return null;
     }
@@ -230,7 +233,7 @@ export function createEngine(
         runAs: source.runAs,
       };
       if (source.loginId > 0) {
-        const service = databaseLogins();
+        const service = await databaseLogins();
         if (!service) {
           throw new BackupsError(
             "This job uses a Databases plugin login, but the Databases plugin is off",
@@ -354,6 +357,12 @@ export function createEngine(
       };
     },
 
+    async unlockRepo(repo: RepoRow, hostId: number): Promise<void> {
+      await remote.root(hostId, unlockRepoScript(await envFor(repo, hostId)), {
+        timeoutMs: 120_000,
+      });
+    },
+
     async startBackup(
       job: JobRow,
       trigger: RunTrigger,
@@ -405,6 +414,7 @@ export function createEngine(
             dumps: plan.dumps,
             stopStacks: plan.stopStacks,
             oneFileSystem: job.oneFileSystem,
+            options: backupOptionArgs(job.backupOptions),
             keep: job.keep,
             pre: job.hooks.pre,
             post: job.hooks.post,

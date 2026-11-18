@@ -48,6 +48,7 @@ export interface JobRow {
   keep: KeepPolicy;
   alerts: JobAlerts;
   oneFileSystem: boolean;
+  backupOptions: string;
   lastStatus: RunStatus | null;
   lastRunAt: string | null;
   lastSuccessAt: string | null;
@@ -129,6 +130,7 @@ function toJob(row: any): JobRow {
       ...parse<Partial<JobAlerts>>(row.alerts, {}),
     },
     oneFileSystem: Boolean(row.oneFileSystem),
+    backupOptions: row.backupOptions ?? "",
     lastStatus: row.lastStatus ?? null,
     lastRunAt: iso(row.lastRunAt),
     lastSuccessAt: iso(row.lastSuccessAt),
@@ -402,6 +404,18 @@ export function createStore(db: PluginDatabase, t: Tables) {
           ),
         );
       return rows.map(toJob);
+    },
+
+    /** Whether any enabled job runs on a schedule. */
+    async hasScheduledJobs(): Promise<boolean> {
+      const rows = await (
+        await client()
+      )
+        .select({ id: t.jobs.id })
+        .from(t.jobs)
+        .where(and(eq(t.jobs.enabled, true), ne(t.jobs.cron, "")))
+        .limit(1);
+      return rows.length > 0;
     },
 
     // Runs

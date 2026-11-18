@@ -274,6 +274,17 @@
         "id": "backups.repositories"
       }
     },
+    "POST /plugin-api/backups/repositories/:id/unlock": {
+      "access": "user",
+      "permission": "backups.use",
+      "resource": {
+        "kind": "own",
+        "fixture": "backups.repositories"
+      },
+      "params": {
+        "id": "backups.repositories"
+      }
+    },
     "GET /plugin-api/backups/runs": {
       "access": "user",
       "permission": "backups.use"

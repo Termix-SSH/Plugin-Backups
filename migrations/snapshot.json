@@ -127,6 +127,11 @@
           "notNull": true,
           "defaultValue": false
         },
+        "backupOptions": {
+          "type": "text",
+          "notNull": true,
+          "defaultValue": ""
+        },
         "lastStatus": {
           "type": "varchar",
           "length": 12

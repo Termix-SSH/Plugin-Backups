@@ -21,6 +21,7 @@ import {
   restoreRunScript,
   snapshotsScript,
   testRepoScript,
+  unlockRepoScript,
   type BackupPlan,
 } from "../../src/backend/scripts.js";
 import { EMPTY_KEEP } from "../../src/shared/types.js";
@@ -82,6 +83,7 @@ const PLAN: BackupPlan = {
   ],
   stopStacks: ["web"],
   oneFileSystem: true,
+  options: ["--exclude-caches", "--limit-upload=2048"],
   keep: { ...EMPTY_KEEP, daily: 7 },
   pre: "echo hi",
   post: "",
@@ -115,6 +117,7 @@ describe.skipIf(!hasBash)("generated scripts", () => {
     dump: dumpScript(ENV, "abcd1234", "/a b", true),
     forget: forgetSnapshotScript(ENV, "abcd1234"),
     test: testRepoScript(ENV, true),
+    unlock: unlockRepoScript(ENV),
   };
   for (const [name, script] of Object.entries(scripts)) {
     it(`${name} is valid bash`, () => {
@@ -156,6 +159,7 @@ describe("backup script", () => {
       "restic forget --tag 'termix-job:job-1' --group-by '' --keep-daily 7 --prune",
     );
     expect(script).toContain("--one-file-system");
+    expect(script).toContain("'--exclude-caches' '--limit-upload=2048'");
     expect(script).toContain('--exclude-file "$D/excludes"');
   });
 

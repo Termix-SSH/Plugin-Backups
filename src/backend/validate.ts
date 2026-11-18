@@ -15,6 +15,7 @@ import {
   type RestoreTarget,
 } from "../shared/types.js";
 import { BackupsError } from "./errors.js";
+import { trimEnd, trimStart } from "./trim.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -192,6 +193,45 @@ function hook(value: unknown): string {
   return text.trim() ? text : "";
 }
 
+// Termix sets these itself, and the repository and its password stay with it.
+const RESERVED_OPTIONS = [
+  "-r",
+  "--repo",
+  "--repository-file",
+  "-p",
+  "--password-file",
+  "--password-command",
+  "--json",
+  "--files-from",
+  "--files-from-verbatim",
+  "--files-from-raw",
+  "--stdin",
+  "--stdin-from-command",
+  "--stdin-filename",
+];
+
+export function backupOptionArgs(text: string): string[] {
+  return text.split(/\s+/).filter(Boolean);
+}
+
+export function backupOptions(value: unknown): string {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (text.length > 1000 || CONTROL.test(text)) {
+    throw bad("The restic options are not valid");
+  }
+  const args = backupOptionArgs(text);
+  if (args[0] && !args[0].startsWith("-")) {
+    throw bad("Restic options start with a dash, like --exclude-caches");
+  }
+  for (const arg of args) {
+    const flag = arg.split("=")[0];
+    if (RESERVED_OPTIONS.includes(flag)) {
+      throw bad(`${flag} is set by Termix and can't be changed here`);
+    }
+  }
+  return args.join(" ");
+}
+
 export function hooks(raw: any): JobHooks {
   return { pre: hook(raw?.pre), post: hook(raw?.post) };
 }
@@ -237,6 +277,7 @@ export function job(raw: any): JobInput {
     keep: keep(raw.keep),
     alerts: alerts(raw.alerts),
     oneFileSystem: raw.oneFileSystem === true,
+    backupOptions: backupOptions(raw.backupOptions),
   };
 }
 
@@ -259,12 +300,12 @@ function httpUrl(value: unknown, what: string): string {
   if (url.username || url.password) {
     throw bad("Put the user and password in their own fields");
   }
-  return text.replace(/\/+$/, "");
+  return trimEnd(text);
 }
 
 function relPath(value: unknown, what: string): string {
   const text =
-    typeof value === "string" ? value.trim().replace(/^\/+|\/+$/g, "") : "";
+    typeof value === "string" ? trimStart(trimEnd(value.trim())) : "";
   if (text.length > 1024 || CONTROL.test(text) || /\s/.test(text)) {
     throw bad(`${what} is not valid`);
   }
