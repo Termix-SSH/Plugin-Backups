@@ -69,6 +69,10 @@ export async function startServer(
     actor: "user-1",
     router: () => (router = express.Router()),
     permissions: options.permissions ?? ["backups.use"],
+    notificationChannels: [
+      { id: 7, name: "Ops email", type: "email", enabled: true },
+      { id: 8, name: "Phone", type: "ntfy", enabled: true },
+    ],
   });
 
   const rank = { connect: 1, view: 2, edit: 3, manage: 4 } as const;

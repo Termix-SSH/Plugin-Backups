@@ -132,6 +132,32 @@
           "notNull": true,
           "defaultValue": ""
         },
+        "retries": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "retryDelayMinutes": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 10
+        },
+        "retryCount": {
+          "type": "integer",
+          "notNull": true,
+          "defaultValue": 0
+        },
+        "retryAt": {
+          "type": "timestamp"
+        },
+        "mirrors": {
+          "type": "text",
+          "notNull": true,
+          "defaultValue": ""
+        },
+        "runnerHostId": {
+          "type": "integer"
+        },
         "lastStatus": {
           "type": "varchar",
           "length": 12
@@ -211,6 +237,9 @@
         "hostId": {
           "type": "refHost",
           "notNull": true
+        },
+        "resticHostId": {
+          "type": "integer"
         },
         "repositoryId": {
           "type": "integer",

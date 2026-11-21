@@ -27,8 +27,9 @@ Read the [docs](https://docs.termix.site/plugins/backups) to set it up and use i
 ## Features
 
 - Encrypted, deduplicated backups with restic, installed for you when a host has none
+- Back up a host without restic on it, by running restic on another host that gets the files through Termix
 - Store backups in S3 compatible storage, a restic REST server, any rclone remote or a folder on the host
-- Back up folders, MySQL, MariaDB, PostgreSQL and SQLite databases, and Docker volumes and stacks
+- Back up folders, MySQL, MariaDB, PostgreSQL, SQLite, MongoDB, Redis and SQL Server databases, and Docker volumes and stacks
 - Run backups on a schedule, with commands before and after and old snapshots removed for you
 - Backups run on the host by themselves, so they carry on if Termix restarts
 - Watch a backup run live, stop it, and read its log

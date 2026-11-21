@@ -249,3 +249,97 @@ describe("repository env", () => {
     expect(script).toContain("setsid bash");
   });
 });
+
+describe("MongoDB, Redis and SQL Server dumps", () => {
+  const plan: BackupPlan = {
+    ...PLAN,
+    dumps: [
+      {
+        file: "1-mongo-all",
+        engine: "mongo",
+        address: "",
+        port: null,
+        username: "root",
+        passwordEnv: "TERMIX_DB_1",
+        runAs: "mongodb",
+        databases: [],
+      },
+      {
+        file: "2-mongo-shop",
+        engine: "mongo",
+        address: "10.0.0.5",
+        port: 27018,
+        username: "",
+        passwordEnv: null,
+        runAs: "",
+        databases: ["shop"],
+      },
+      {
+        file: "3-redis-all",
+        engine: "redis",
+        address: "",
+        port: 6390,
+        username: "",
+        passwordEnv: "TERMIX_DB_3",
+        runAs: "",
+        databases: [],
+      },
+      {
+        file: "4-mssql-all",
+        engine: "mssql",
+        address: "",
+        port: null,
+        username: "sa",
+        passwordEnv: "TERMIX_DB_4",
+        runAs: "",
+        databases: [],
+        serverDir: "/srv/mssql backups",
+      },
+      {
+        file: "5-mssql-app",
+        engine: "mssql",
+        address: "sql.local",
+        port: 1444,
+        username: "sa",
+        passwordEnv: "TERMIX_DB_5",
+        runAs: "",
+        databases: ["App]Db"],
+      },
+    ],
+  };
+  const script = backupRunScript(plan);
+
+  it.runIf(hasBash)("is valid bash", () => {
+    const run = spawnSync("bash", ["-n"], { input: script, encoding: "utf8" });
+    expect(run.stderr).toBe("");
+    expect(run.status).toBe(0);
+  });
+
+  it("dumps MongoDB to gzipped archives with the password in a private file", () => {
+    expect(script).toContain("as_user 'mongodb' mktemp");
+    expect(script).toContain(
+      `--config "$CFG" --host '127.0.0.1' --port 27017 --username 'root' --authenticationDatabase admin --archive --gzip`,
+    );
+    expect(script).toContain(
+      "--host '10.0.0.5' --port 27018 --db 'shop' --archive --gzip",
+    );
+    expect(script).not.toMatch(/--password/);
+  });
+
+  it("saves Redis with the password in REDISCLI_AUTH", () => {
+    expect(script).toContain('export REDISCLI_AUTH="${TERMIX_DB_3:-}"');
+    expect(script).toContain(
+      "redis-cli -h '127.0.0.1' -p 6390 --no-auth-warning --rdb -",
+    );
+  });
+
+  it("backs SQL Server up into its own folder and moves the file over", () => {
+    expect(script).toContain('export SQLCMDPASSWORD="${TERMIX_DB_4:-}"');
+    expect(script).toContain("-S '127.0.0.1,1433' -U 'sa'");
+    expect(script).toContain("'/srv/mssql backups/termix-'");
+    expect(script).toContain("SELECT name FROM sys.databases");
+    expect(script).toContain("-S 'sql.local,1444'");
+    expect(script).toContain("DBS=('App]Db')");
+    expect(script).toContain("/var/opt/mssql/backup/termix-");
+  });
+});

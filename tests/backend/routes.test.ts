@@ -421,6 +421,111 @@ describe("runs", () => {
     expect(s.mock.notifications.length).toBe(count);
   });
 
+  it("lists the user's alert channels without their settings", async () => {
+    const s = (server = await startServer());
+    const res = await s.request("GET", "/alert-channels");
+    expect(res.body).toEqual([
+      { id: 7, name: "Ops email", type: "email", enabled: true },
+      { id: 8, name: "Phone", type: "ntfy", enabled: true },
+    ]);
+  });
+
+  it("sends a job's alerts to its picked channels, with success and warning toggles", async () => {
+    const { s, job } = await withJob({
+      alerts: {
+        onFailure: true,
+        onWarning: false,
+        onSuccess: true,
+        channelIds: [8],
+        staleDays: 0,
+      },
+    });
+    expect(job.alerts).toMatchObject({ onSuccess: true, channelIds: [8] });
+    const finish = async (result: string) => {
+      await s.request("POST", `/jobs/${job.id}/run`);
+      s.ssh.replies.length = 0;
+      s.ssh.replies.push({
+        match: "@@termix:run=",
+        stdout: pollOutput(runUid(s), { result }),
+      });
+      await s.mock.runScheduled();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      s.ssh.replies.length = 0;
+    };
+    await finish("status=success\ncode=0\nmessage=");
+    expect(s.mock.notifications.at(-1)?.notification).toMatchObject({
+      category: "backups.run_succeeded",
+      channelIds: [8],
+    });
+    const count = s.mock.notifications.length;
+    await finish("status=warning\ncode=3\nmessage=some files");
+    expect(s.mock.notifications.length).toBe(count);
+    await finish("status=failed\ncode=1\nmessage=boom");
+    expect(s.mock.notifications.at(-1)?.notification).toMatchObject({
+      category: "backups.run_failed",
+      channelIds: [8],
+    });
+  });
+
+  it("refuses bad alert channels", async () => {
+    const s = (server = await startServer());
+    await s.request("POST", "/repositories", S3_REPO);
+    const res = await s.request("POST", "/hosts/1/jobs", {
+      ...JOB,
+      alerts: { onFailure: true, staleDays: 0, channelIds: ["x"] },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("retries a failed backup and only alerts after the last try", async () => {
+    const { s, job } = await withJob({ retries: 1, retryDelayMinutes: 5 });
+    expect(job).toMatchObject({ retries: 1, retryDelayMinutes: 5 });
+    const fail = async () => {
+      s.ssh.replies.length = 0;
+      s.ssh.replies.push({
+        match: "@@termix:run=",
+        stdout: pollOutput(runUid(s), {
+          result: "status=failed\ncode=1\nmessage=boom",
+        }),
+      });
+      await s.mock.runScheduled();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      s.ssh.replies.length = 0;
+    };
+    await s.request("POST", `/jobs/${job.id}/run`);
+    await fail();
+    let view = (await s.request("GET", `/jobs/${job.id}`)).body;
+    expect(view.retryAt).toBeTruthy();
+    expect(Date.parse(view.retryAt) - Date.now()).toBeGreaterThan(4 * 60_000);
+    expect(
+      s.mock.notifications.some(
+        (n) => n.notification.category === "backups.run_failed",
+      ),
+    ).toBe(false);
+
+    await s.request("POST", `/jobs/${job.id}/run`);
+    await fail();
+    view = (await s.request("GET", `/jobs/${job.id}`)).body;
+    expect(view.retryAt).toBeNull();
+    expect(view.lastStatus).toBe("failed");
+    expect(s.mock.notifications.at(-1)?.notification).toMatchObject({
+      category: "backups.run_failed",
+    });
+  });
+
+  it("refuses bad retry values", async () => {
+    const s = (server = await startServer());
+    await s.request("POST", "/repositories", S3_REPO);
+    for (const bad of [
+      { retries: 11 },
+      { retries: -1 },
+      { retries: 1, retryDelayMinutes: 0 },
+    ]) {
+      const res = await s.request("POST", "/hosts/1/jobs", { ...JOB, ...bad });
+      expect(res.status).toBe(400);
+    }
+  });
+
   it("fails a dead run with no result after the grace time", async () => {
     const { s, job } = await withJob();
     const started = await s.request("POST", `/jobs/${job.id}/run`);
